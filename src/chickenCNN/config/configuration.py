@@ -1,7 +1,9 @@
+import os
 from chickenCNN.constants import *
 from chickenCNN.utils.common import read_yaml,create_directories
 from chickenCNN.entity.config_entity import (DataIngestionConfig,
-                                             PrepareBaseModelConfig)
+                                             PrepareBaseModelConfig,
+                                             PrepareCallbacksConfig)
 
 class ConfigurationManager:
     def __init__(
@@ -47,3 +49,20 @@ class ConfigurationManager:
         )
 
         return prepare_base_model_config
+    
+    
+    def get_prepare_callback_config(self) -> PrepareCallbacksConfig:
+        config = self.config.prepare_callbacks
+        model_ckpt_dir = os.path.dirname(config.checkpoint_model_filepath)
+        create_directories([
+            (model_ckpt_dir),
+            (config.tensorboard_root_log_dir)
+        ])
+
+        prepare_callback_config = PrepareCallbacksConfig(
+            root_dir=(config.root_dir),
+            tensorboard_root_log_dir=(config.tensorboard_root_log_dir),
+            checkpoint_model_filepath=(config.checkpoint_model_filepath)
+        )
+
+        return prepare_callback_config 
