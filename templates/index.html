@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Object Classification</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        header {
+            background-color: #f8f9fa;
+            padding: 10px 0;
+            text-align: center;
+        }
+        main {
+            padding: 20px;
+        }
+        .placeholder {
+            width: 300px;
+            height: 300px;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        footer {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            padding: 10px;
+        }
+        #loading {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            display: none;
+        }
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Object Classification</h1>
+    </header>
+    <main class="container text-center">
+        <div class="placeholder">
+            <img src="" id="photo" style="display:none;">
+            <canvas id="canvas" style="display:none;"></canvas>
+        </div>
+        <form id="upload-data" class="text-center">
+            <button type="button" class="btn btn-primary mr-2" id="uload">Upload</button>
+            <button id="send" type="button" class="btn btn-success">Predict</button>
+            <input type="hidden" id="url" value="../predict">
+            <input name="upload" type="file" id="fileinput" style="display:none;">
+        </form>
+        <div class="mt-4">
+            <h5>Prediction Results</h5>
+            <div class="jsonRes"></div>
+        </div>
+    </main>
+
+    <div id="loading">
+        <div class="loader"></div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script>
+        var base_data = "";
+
+        function sendRequest(base64Data) {
+            if (base64Data != "" || base64Data != null) {
+                var url = $("#url").val();
+                $("#loading").show();
+                $.ajax({
+                    url: url,
+                    type: "post",
+                    cache: false,
+                    async: true,
+                    crossDomain: true,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    data: JSON.stringify({ image: base64Data }),
+                    success: function(res) {
+                        $(".jsonRes").html("<pre>" + JSON.stringify(res, undefined, 2) + "</pre>");
+                        $("#loading").hide();
+                    }
+                });
+            }
+        }
+
+        $(document).ready(function() {
+            $("#loading").hide();
+
+            $('#send').click(function(evt) {
+                sendRequest(base_data);
+            });
+
+            $('#uload').click(function(evt) {
+                $('#fileinput').focus().trigger('click');
+            });
+
+            $("#fileinput").change(function() {
+                if (this.files && this.files[0]) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var url = e.target.result;
+                        var img = new Image();
+                        img.crossOrigin = 'Anonymous';
+                        img.onload = function() {
+                            var canvas = document.createElement('CANVAS');
+                            var ctx = canvas.getContext('2d');
+                            canvas.height = this.height;
+                            canvas.width = this.width;
+                            ctx.drawImage(this, 0, 0);
+                            base_data = canvas.toDataURL('image/jpeg', 1.0).replace(/^data:image.+;base64,/, '');
+                            canvas = null;
+                        };
+                        img.src = url;
+                        $('#photo').attr('src', url);
+                        $('#photo').show();
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
